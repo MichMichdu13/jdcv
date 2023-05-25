@@ -26,12 +26,12 @@ class TagsController extends AbstractController
         ]);
     }
 
-    #[Route('api/tag/{id}', name: 'findTag', methods: ['GET'])]
+    #[Route('api/tag/{id}', name: 'getTag', methods: ['GET'])]
     public function findTag(int $id, SerializerInterface $serializer,TagsRepository $tagsRepository): JsonResponse
     {
         $tag = $tagsRepository->find($id);
         if($tag){
-            $jsonTag = $serializer->serialize($tag, 'json');
+            $jsonTag = $serializer->serialize($tag, 'json',['groups' => 'tag']);
             return new JsonResponse($jsonTag, Response::HTTP_OK, [], true);
         }
         return new JsonResponse(null, Response::HTTP_NOT_FOUND);
@@ -45,9 +45,9 @@ class TagsController extends AbstractController
         $em->persist($tag);
         $em->flush();
 
-        $jsonTags = $serializer->serialize($tag, 'json',['groups' => 'getTags']);
+        $jsonTags = $serializer->serialize($tag, 'json',['groups' => 'tag']);
 
-        $location = $urlGenerator->generate('getTags', ['id' => $tag->getId()], UrlGeneratorInterface::ABSOLUTE_URL);
+        $location = $urlGenerator->generate('getTag', ['id' => $tag->getId()], UrlGeneratorInterface::ABSOLUTE_URL);
 
         return new JsonResponse($jsonTags, Response::HTTP_CREATED, ["Location" => $location], true);
     }

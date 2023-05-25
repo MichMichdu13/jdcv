@@ -6,6 +6,7 @@ use App\Repository\TagsRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: TagsRepository::class)]
 class Tags
@@ -13,9 +14,11 @@ class Tags
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(["tag"])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(["tag"])]
     private ?string $tag = null;
 
     #[ORM\OneToMany(mappedBy: 'tag', targetEntity: TagsToLogement::class)]
