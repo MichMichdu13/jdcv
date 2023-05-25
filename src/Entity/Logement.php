@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\LogementRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
@@ -33,9 +35,6 @@ class Logement
     #[Groups(["getLogement"])]
     private ?float $prixNuit = null;
 
-    #[ORM\Column]
-    #[Groups(["getLogement"])]
-    private array $tags = [];
 
     #[ORM\Column]
     #[Groups(["getLogement"])]
@@ -56,6 +55,14 @@ class Logement
     #[ORM\Column(length: 255)]
     #[Groups(["getLogement"])]
     private ?string $gps = null;
+
+    #[ORM\OneToMany(mappedBy: 'logement', targetEntity: TagsToLogement::class)]
+    private Collection $tags;
+
+    public function __construct()
+    {
+        $this->tags = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -110,17 +117,6 @@ class Logement
         return $this;
     }
 
-    public function getTags(): array
-    {
-        return $this->tags;
-    }
-
-    public function setTags(array $tags): self
-    {
-        $this->tags = $tags;
-
-        return $this;
-    }
 
     public function getNbPersonne(): ?int
     {
@@ -178,6 +174,36 @@ class Logement
     public function setGps(string $gps): self
     {
         $this->gps = $gps;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, TagsToLogement>
+     */
+    public function getTags(): Collection
+    {
+        return $this->tags;
+    }
+
+    public function addTag(TagsToLogement $tag): self
+    {
+        if (!$this->tags->contains($tag)) {
+            $this->tags->add($tag);
+            $tag->setLogement($this);
+        }
+
+        return $this;
+    }
+
+    public function removeTag(TagsToLogement $tag): self
+    {
+        if ($this->tags->removeElement($tag)) {
+            // set the owning side to null (unless already changed)
+            if ($tag->getLogement() === $this) {
+                $tag->setLogement(null);
+            }
+        }
 
         return $this;
     }
