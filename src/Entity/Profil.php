@@ -15,15 +15,15 @@ class Profil implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(["getLogement"])]
+    #[Groups(["getLogement","getProfile"])]
     private ?int $id = null;
 
     #[ORM\Column(length: 180, unique: true)]
-    #[Groups(["getLogement"])]
+    #[Groups(["getLogement","getProfile"])]
     private ?string $email = null;
 
     #[ORM\Column]
-    #[Groups(["getLogement"])]
+    #[Groups(["getLogement","getProfile"])]
     private array $roles = [];
 
     /**
@@ -33,22 +33,23 @@ class Profil implements UserInterface, PasswordAuthenticatedUserInterface
     private ?string $password = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(["getLogement"])]
+    #[Groups(["getLogement","getProfile"])]
     private ?string $nom = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(["getLogement"])]
+    #[Groups(["getLogement","getProfile"])]
     private ?string $prenom = null;
 
     #[ORM\Column(type: Types::DATE_MUTABLE)]
-    #[Groups(["getLogement"])]
+    #[Groups(["getLogement","getProfile"])]
     private ?\DateTimeInterface $dateNaissance = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
-    #[Groups(["getLogement"])]
+    #[Groups(["getLogement","getProfile"])]
     private ?string $description = null;
 
     #[ORM\OneToOne(mappedBy: 'Profile', cascade: ['persist', 'remove'])]
+    #[Groups(["getProfile"])]
     private ?User $user = null;
 
     public function getId(): ?int

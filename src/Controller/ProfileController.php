@@ -24,7 +24,7 @@ class ProfileController extends AbstractController
     {
         $profile = $profilRepository->find($id);
         if($profile){
-            $jsonProfile = $serializer->serialize($profile, 'json');
+            $jsonProfile = $serializer->serialize($profile, 'json',['groups' => 'getProfile']);
             return new JsonResponse($jsonProfile, Response::HTTP_OK, [], true);
         }
         return new JsonResponse(null, Response::HTTP_NOT_FOUND);
