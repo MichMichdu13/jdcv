@@ -2,11 +2,15 @@
 
 namespace App\Controller;
 
+use App\Entity\ImgLogement;
 use App\Entity\Logement;
 use App\Entity\Profil;
+use App\Entity\TagsToLogement;
 use App\Entity\User;
 use App\Repository\LogementRepository;
 use App\Repository\ProfilRepository;
+use App\Repository\TagsRepository;
+use App\Repository\TagsToLogementRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Bundle\SecurityBundle\Security;
@@ -22,6 +26,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 class LogementController extends AbstractController
 {
+
     #[Route('api/logement/{id}', name: 'getlogement', methods: ['GET'])]
     public function findLogement(int $id, SerializerInterface $serializer,LogementRepository $logementRepository  ): JsonResponse
     {
@@ -35,15 +40,57 @@ class LogementController extends AbstractController
 
 
     #[Route('/api/logement', name:"createlogement", methods: ['POST'])]
-    public function createLogement(Request $request, SerializerInterface $serializer, EntityManagerInterface $em, UrlGeneratorInterface $urlGenerator, Security $security, ProfilRepository $profilRepository): JsonResponse
+    public function createLogement(Request $request,TagsRepository $tagsRepository, SerializerInterface $serializer, EntityManagerInterface $em, UrlGeneratorInterface $urlGenerator, Security $security, ProfilRepository $profilRepository): JsonResponse
     {
         $user = $security->getUser()->getUserIdentifier();
         $profile = $profilRepository->findOneBy(array('email' => $user));
 
         $logement = $serializer->deserialize($request->getContent(), Logement::class, 'json');
         $logement->setUser($profile->getUser());
+        // Récupération de l'ensemble des données envoyées sous forme de tableau
+        $content = $request->toArray();
+
+        // Récupération de l'idAuthor. S'il n'est pas défini, alors on met -1 par défaut.
+        $tags = $content['Tags'] ?? [];
+        foreach ($tags as $tag) {
+            $tagToLogement = new TagsToLogement();
+            $tagToLogement->setLogement($logement);
+            $tagToLogementEntity = $tagsRepository->findOneBy(['tag' => $tag]);
+
+            if ($tagToLogementEntity) {
+                $tagToLogement->setTag($tagToLogementEntity);
+            }
+            $em->persist($tagToLogement);
+            $em->flush();
+        }
         $em->persist($logement);
         $em->flush();
+
+        $imgs = $content['Imgs'] ?? [];
+        foreach ($imgs as $img) {
+
+            // Decode the image from base64 and save it to a temporary file
+            $imageData = base64_decode($img['imgBase64']);
+            $tmpPath = tempnam(sys_get_temp_dir(), 'base64decoded');
+            file_put_contents($tmpPath, $imageData);
+
+            // Create a unique name for the file and move it to the public/images directory
+            $fileName = uniqid() . '.png';  // Replace 'png' with the correct extension
+            $filePath = $this->getParameter('images_directory') . '/' . $fileName;
+            rename($tmpPath, $filePath);
+
+            // Create a new Image entity and set its properties
+            $image = new ImgLogement();
+            $image->setFilename($fileName);
+            $image->setImgMain($img['imgMain']);
+            $image->setLogement($logement);
+            // You might need to fetch the related housing and set it like this:
+            // $image->setHousing($housing);
+
+            // Persist and flush the new Image entity
+            $em->persist($image);
+            $em->flush();
+        }
 
         $jsonLogement = $serializer->serialize($logement, 'json',['groups' => 'getLogement']);
 

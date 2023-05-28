@@ -59,9 +59,14 @@ class Logement
     #[ORM\OneToMany(mappedBy: 'logement', targetEntity: TagsToLogement::class)]
     private Collection $tags;
 
+    #[ORM\OneToMany(mappedBy: 'logement', targetEntity: ImgLogement::class)]
+    #[Groups(["getLogement"])]
+    private Collection $imgLogements;
+
     public function __construct()
     {
         $this->tags = new ArrayCollection();
+        $this->imgLogements = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -202,6 +207,36 @@ class Logement
             // set the owning side to null (unless already changed)
             if ($tag->getLogement() === $this) {
                 $tag->setLogement(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, ImgLogement>
+     */
+    public function getImgLogements(): Collection
+    {
+        return $this->imgLogements;
+    }
+
+    public function addImgLogement(ImgLogement $imgLogement): self
+    {
+        if (!$this->imgLogements->contains($imgLogement)) {
+            $this->imgLogements->add($imgLogement);
+            $imgLogement->setLogement($this);
+        }
+
+        return $this;
+    }
+
+    public function removeImgLogement(ImgLogement $imgLogement): self
+    {
+        if ($this->imgLogements->removeElement($imgLogement)) {
+            // set the owning side to null (unless already changed)
+            if ($imgLogement->getLogement() === $this) {
+                $imgLogement->setLogement(null);
             }
         }
 

@@ -31,7 +31,7 @@ class ProfileController extends AbstractController
     }
 
 
-    #[Route('/api/profile', name:"createProfile", methods: ['POST'])]
+    #[Route('/api/register', name:"createProfile", methods: ['POST'])]
     public function createProfile(Request $request, SerializerInterface $serializer, EntityManagerInterface $em, UrlGeneratorInterface $urlGenerator,UserPasswordHasherInterface $userPasswordHasher): JsonResponse
     {
 
