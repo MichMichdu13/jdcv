@@ -63,10 +63,18 @@ class Logement
     #[Groups(["getLogement"])]
     private Collection $imgLogements;
 
+    #[ORM\OneToMany(mappedBy: 'logement', targetEntity: EventToLogement::class)]
+    private Collection $event;
+
+    #[ORM\OneToMany(mappedBy: 'logement', targetEntity: StyleToLogement::class)]
+    private Collection $style;
+
     public function __construct()
     {
         $this->tags = new ArrayCollection();
         $this->imgLogements = new ArrayCollection();
+        $this->event = new ArrayCollection();
+        $this->style = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -237,6 +245,66 @@ class Logement
             // set the owning side to null (unless already changed)
             if ($imgLogement->getLogement() === $this) {
                 $imgLogement->setLogement(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, EventToLogement>
+     */
+    public function getEvent(): Collection
+    {
+        return $this->event;
+    }
+
+    public function addEvent(EventToLogement $event): self
+    {
+        if (!$this->event->contains($event)) {
+            $this->event->add($event);
+            $event->setLogement($this);
+        }
+
+        return $this;
+    }
+
+    public function removeEvent(EventToLogement $event): self
+    {
+        if ($this->events->removeElement($event)) {
+            // set the owning side to null (unless already changed)
+            if ($event->getLogement() === $this) {
+                $event->setLogement(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, StyleToLogement>
+     */
+    public function getStyle(): Collection
+    {
+        return $this->style;
+    }
+
+    public function addStyle(StyleToLogement $style): self
+    {
+        if (!$this->style->contains($style)) {
+            $this->style->add($style);
+            $style->setLogement($this);
+        }
+
+        return $this;
+    }
+
+    public function removeStyle(StyleToLogement $style): self
+    {
+        if ($this->style->removeElement($style)) {
+            // set the owning side to null (unless already changed)
+            if ($style->getLogement() === $this) {
+                $style->setLogement(null);
             }
         }
 

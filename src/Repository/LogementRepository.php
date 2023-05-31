@@ -38,6 +38,34 @@ class LogementRepository extends ServiceEntityRepository
             $this->getEntityManager()->flush();
         }
     }
+    public function findByCriteria($styleCriteria, $eventCriteria, $tagCriteria)
+    {
+        $qb = $this->createQueryBuilder('l');
+
+        if ($styleCriteria !== null) {
+            $qb->leftJoin('l.style', 'stl')
+                ->leftJoin('stl.style', 's')
+                ->andWhere('s.name = :styleCriteria')
+                ->setParameter('styleCriteria', $styleCriteria);
+        }
+
+        if ($eventCriteria !== null) {
+            $qb->leftJoin('l.event', 'etl')
+                ->leftJoin('etl.event', 'e')
+                ->andWhere('e.name = :eventCriteria')
+                ->setParameter('eventCriteria', $eventCriteria);
+        }
+
+        if ($tagCriteria !== null) {
+            $qb->leftJoin('l.tags', 'ttl')
+                ->leftJoin('ttl.tag', 't')
+                ->andWhere('t.tag = :tagCriteria')
+                ->setParameter('tagCriteria', $tagCriteria);
+        }
+
+        return $qb->getQuery()->execute();
+    }
+
 
 //    /**
 //     * @return Logement[] Returns an array of Logement objects

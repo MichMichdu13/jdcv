@@ -27,6 +27,23 @@ use Symfony\Component\HttpFoundation\Response;
 class LogementController extends AbstractController
 {
 
+    #[Route('api/logement/search', name: 'getlogements', methods: ['POST'])]
+    public function searchLogment(Request $request, LogementRepository $logementRepository, SerializerInterface $serializer)
+    {
+        $data = json_decode($request->getContent(), true);
+
+        $styleCriteria = $data['style'] ?? null;
+        $eventCriteria = $data['event'] ?? null;
+        $tagCriteria = $data['tag'] ?? null;
+
+        $logements = $logementRepository->findByCriteria($styleCriteria, $eventCriteria, $tagCriteria);
+        if($logements){
+            $jsonLogement = $serializer->serialize($logements, 'json',['groups' => 'getLogement']);
+            return new JsonResponse($jsonLogement, Response::HTTP_OK, [], true);
+        }
+        return new JsonResponse(null, Response::HTTP_NOT_FOUND);
+    }
+
     #[Route('api/logement/{id}', name: 'getlogement', methods: ['GET'])]
     public function findLogement(int $id, SerializerInterface $serializer,LogementRepository $logementRepository  ): JsonResponse
     {
