@@ -35,8 +35,17 @@ class LogementController extends AbstractController
         $styleCriteria = $data['style'] ?? null;
         $eventCriteria = $data['event'] ?? null;
         $tagCriteria = $data['tag'] ?? null;
+        $startDate = isset($data['startDate']) ? new \DateTime($data['startDate']) : null;
+        $endDate = isset($data['endDate']) ? new \DateTime($data['endDate']) : null;
 
-        $logements = $logementRepository->findByCriteria($styleCriteria, $eventCriteria, $tagCriteria);
+        if ($startDate === null && $endDate !== null) {
+            $startDate = $endDate; // Utilisez la même date pour startDate
+        } elseif ($startDate !== null && $endDate === null) {
+            $endDate = $startDate; // Utilisez la même date pour endDate
+        }
+
+        $logements = $logementRepository->findByCriteria($styleCriteria, $eventCriteria, $tagCriteria, $startDate, $endDate);
+
         if($logements){
             $jsonLogement = $serializer->serialize($logements, 'json',['groups' => 'getLogement']);
             return new JsonResponse($jsonLogement, Response::HTTP_OK, [], true);

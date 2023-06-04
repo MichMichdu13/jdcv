@@ -34,14 +34,30 @@ class ProfileController extends AbstractController
     #[Route('/api/register', name:"createProfile", methods: ['POST'])]
     public function createProfile(Request $request, SerializerInterface $serializer, EntityManagerInterface $em, UrlGeneratorInterface $urlGenerator,UserPasswordHasherInterface $userPasswordHasher): JsonResponse
     {
+        $data = $request->getContent();
 
-        $profile = $serializer->deserialize($request->getContent(), Profil::class, 'json');
+        if (empty($data)) {
+            return new JsonResponse(['error' => 'Data is missing.'], Response::HTTP_BAD_REQUEST);
+        }
+        dd($serializer->deserialize($data, "array",  'json'));
+
+        try {
+            $profile = $serializer->deserialize($data, Profil::class, 'json');
+        } catch (\Exception $e) {
+            return new JsonResponse(['error' => 'Invalid data format.'], Response::HTTP_BAD_REQUEST);
+        }
         $profile->setPassword($userPasswordHasher->hashPassword($profile, "password"));
-        $em->persist($profile);
+
         $user = new User();
         $user->setProfile($profile);
-        $em->persist($user);
-        $em->flush();
+
+        try {
+            $em->persist($profile);
+            $em->persist($user);
+            $em->flush();
+        } catch (\Exception $e) {
+            return new JsonResponse(['error' => 'Failed to save data.'], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
 
         $jsonProfile = $serializer->serialize($profile, 'json');
 
@@ -49,6 +65,7 @@ class ProfileController extends AbstractController
 
         return new JsonResponse($jsonProfile, Response::HTTP_CREATED, ["Location" => $location], true);
     }
+
 
     #[Route('/api/profile/{id}', name: 'deleteProfile', methods: ['DELETE'])]
     public function deleteProfile(Profil $profil, EntityManagerInterface $em): JsonResponse

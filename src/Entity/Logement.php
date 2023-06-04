@@ -69,12 +69,16 @@ class Logement
     #[ORM\OneToMany(mappedBy: 'logement', targetEntity: StyleToLogement::class)]
     private Collection $style;
 
+    #[ORM\OneToMany(mappedBy: 'logement', targetEntity: Reservation::class)]
+    private Collection $reservations;
+
     public function __construct()
     {
         $this->tags = new ArrayCollection();
         $this->imgLogements = new ArrayCollection();
         $this->event = new ArrayCollection();
         $this->style = new ArrayCollection();
+        $this->reservations = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -305,6 +309,36 @@ class Logement
             // set the owning side to null (unless already changed)
             if ($style->getLogement() === $this) {
                 $style->setLogement(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Reservation>
+     */
+    public function getReservations(): Collection
+    {
+        return $this->reservations;
+    }
+
+    public function addReservation(Reservation $reservation): self
+    {
+        if (!$this->reservations->contains($reservation)) {
+            $this->reservations->add($reservation);
+            $reservation->setLogement($this);
+        }
+
+        return $this;
+    }
+
+    public function removeReservation(Reservation $reservation): self
+    {
+        if ($this->reservations->removeElement($reservation)) {
+            // set the owning side to null (unless already changed)
+            if ($reservation->getLogement() === $this) {
+                $reservation->setLogement(null);
             }
         }
 

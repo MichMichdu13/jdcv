@@ -38,7 +38,7 @@ class LogementRepository extends ServiceEntityRepository
             $this->getEntityManager()->flush();
         }
     }
-    public function findByCriteria($styleCriteria, $eventCriteria, $tagCriteria)
+    public function findByCriteria($styleCriteria = null, $eventCriteria = null, array $tagCriteria = null, \DateTime $startDate = null, \DateTime $endDate = null)
     {
         $qb = $this->createQueryBuilder('l');
 
@@ -61,6 +61,12 @@ class LogementRepository extends ServiceEntityRepository
                 ->leftJoin('ttl.tag', 't')
                 ->andWhere('t.tag = :tagCriteria')
                 ->setParameter('tagCriteria', $tagCriteria);
+        }
+        if ($startDate !== null && $endDate !== null) {
+            $qb->leftJoin('l.reservations', 'r')
+                ->andWhere('r.startDate >= :endDate OR r.endDate <= :startDate OR r.user IS NULL')
+                ->setParameter('startDate', $startDate)
+                ->setParameter('endDate', $endDate);
         }
 
         return $qb->getQuery()->execute();
