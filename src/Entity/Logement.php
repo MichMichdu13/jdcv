@@ -72,6 +72,10 @@ class Logement
     #[ORM\OneToMany(mappedBy: 'logement', targetEntity: Reservation::class)]
     private Collection $reservations;
 
+    #[ORM\Column]
+    #[Groups(["getLogement"])]
+    private ?int $chambre = null;
+
     public function __construct()
     {
         $this->tags = new ArrayCollection();
@@ -341,6 +345,18 @@ class Logement
                 $reservation->setLogement(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getChambre(): ?int
+    {
+        return $this->chambre;
+    }
+
+    public function setChambre(int $chambre): self
+    {
+        $this->chambre = $chambre;
 
         return $this;
     }

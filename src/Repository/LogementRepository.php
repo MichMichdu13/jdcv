@@ -4,6 +4,7 @@ namespace App\Repository;
 
 use App\Entity\Logement;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\ORM\Tools\Pagination\Paginator;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
@@ -38,7 +39,7 @@ class LogementRepository extends ServiceEntityRepository
             $this->getEntityManager()->flush();
         }
     }
-    public function findByCriteria($styleCriteria = null, $eventCriteria = null, array $tagCriteria = null, \DateTime $startDate = null, \DateTime $endDate = null)
+    public function findByCriteria($styleCriteria = null, $eventCriteria = null, array $tagCriteria = null, \DateTime $startDate = null, \DateTime $endDate = null, string $department= null, $page = 1, $limit = 20)
     {
         $qb = $this->createQueryBuilder('l');
 
@@ -59,17 +60,26 @@ class LogementRepository extends ServiceEntityRepository
         if ($tagCriteria !== null) {
             $qb->leftJoin('l.tags', 'ttl')
                 ->leftJoin('ttl.tag', 't')
-                ->andWhere('t.tag = :tagCriteria')
+                ->andWhere('t.tag IN (:tagCriteria)')
                 ->setParameter('tagCriteria', $tagCriteria);
         }
         if ($startDate !== null && $endDate !== null) {
             $qb->leftJoin('l.reservations', 'r')
-                ->andWhere('r.startDate >= :endDate OR r.endDate <= :startDate OR r.user IS NULL')
+                ->andWhere('r.date >= :startDate AND r.date <= :endDate OR r.user IS NULL')
                 ->setParameter('startDate', $startDate)
                 ->setParameter('endDate', $endDate);
         }
 
-        return $qb->getQuery()->execute();
+        if ($department !== null) {
+            $qb->andWhere('SUBSTRING(l.cp, 1, 2) = :department')
+                ->setParameter('department', $department);
+        }
+        $qb->setFirstResult(($page-1) * $limit)
+            ->setMaxResults($limit);
+
+        $paginator = new Paginator($qb);
+
+        return $paginator;
     }
 
 

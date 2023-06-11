@@ -39,14 +39,19 @@ class ProfileController extends AbstractController
         if (empty($data)) {
             return new JsonResponse(['error' => 'Data is missing.'], Response::HTTP_BAD_REQUEST);
         }
-        dd($serializer->deserialize($data, "array",  'json'));
 
         try {
             $profile = $serializer->deserialize($data, Profil::class, 'json');
         } catch (\Exception $e) {
             return new JsonResponse(['error' => 'Invalid data format.'], Response::HTTP_BAD_REQUEST);
         }
-        $profile->setPassword($userPasswordHasher->hashPassword($profile, "password"));
+        $content = $request->toArray();
+        if(isset($content["password"])){
+            $profile->setPassword($userPasswordHasher->hashPassword($profile, "password"));
+        }else{
+            return new JsonResponse(['error' => 'Invalid data password.'], Response::HTTP_BAD_REQUEST);
+        }
+
 
         $user = new User();
         $user->setProfile($profile);
