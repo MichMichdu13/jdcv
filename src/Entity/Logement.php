@@ -15,7 +15,7 @@ class Logement
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(["getLogement"])]
+    #[Groups(["getLogement", "getResa"])]
     private ?int $id = null;
 
     #[ORM\ManyToOne(inversedBy: 'logements')]
@@ -24,64 +24,72 @@ class Logement
     private ?User $User = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(["getLogement"])]
+    #[Groups(["getLogement", "getResa"])]
     private ?string $titre = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
-    #[Groups(["getLogement"])]
+    #[Groups(["getLogement", "getResa"])]
     private ?string $description = null;
 
     #[ORM\Column]
-    #[Groups(["getLogement"])]
+    #[Groups(["getLogement", "getResa"])]
     private ?float $prixNuit = null;
 
 
     #[ORM\Column]
-    #[Groups(["getLogement"])]
+    #[Groups(["getLogement", "getResa"])]
     private ?int $nbPersonne = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(["getLogement"])]
+    #[Groups(["getLogement", "getResa"])]
     private ?string $ville = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(["getLogement"])]
+    #[Groups(["getLogement", "getResa"])]
     private ?string $cp = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(["getLogement"])]
+    #[Groups(["getLogement", "getResa"])]
     private ?string $adresse = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(["getLogement"])]
+    #[Groups(["getLogement", "getResa"])]
     private ?string $gps = null;
 
     #[ORM\OneToMany(mappedBy: 'logement', targetEntity: TagsToLogement::class)]
+    #[Groups(["getLogement", "getResa"])]
     private Collection $tags;
 
     #[ORM\OneToMany(mappedBy: 'logement', targetEntity: ImgLogement::class)]
-    #[Groups(["getLogement"])]
+    #[Groups(["getLogement", "getResa"])]
     private Collection $imgLogements;
 
-    #[ORM\OneToMany(mappedBy: 'logement', targetEntity: EventToLogement::class)]
-    private Collection $event;
-
-    #[ORM\OneToMany(mappedBy: 'logement', targetEntity: StyleToLogement::class)]
-    private Collection $style;
-
     #[ORM\OneToMany(mappedBy: 'logement', targetEntity: Reservation::class)]
+    #[Groups(["getLogement"])]
     private Collection $reservations;
 
     #[ORM\Column]
     #[Groups(["getLogement"])]
     private ?int $chambre = null;
 
+    #[ORM\Column(type: Types::DATE_MUTABLE)]
+    private ?\DateTimeInterface $dateStart = null;
+
+    #[ORM\Column(type: Types::DATE_MUTABLE)]
+    private ?\DateTimeInterface $dateEnd = null;
+
+    #[ORM\ManyToOne(inversedBy: 'logements')]
+    #[Groups(["getLogement"])]
+    private ?Event $event = null;
+
+    #[ORM\ManyToOne(inversedBy: 'logements')]
+    #[Groups(["getLogement"])]
+    private ?Style $style = null;
+
     public function __construct()
     {
         $this->tags = new ArrayCollection();
         $this->imgLogements = new ArrayCollection();
-        $this->event = new ArrayCollection();
-        $this->style = new ArrayCollection();
         $this->reservations = new ArrayCollection();
     }
 
@@ -259,65 +267,6 @@ class Logement
         return $this;
     }
 
-    /**
-     * @return Collection<int, EventToLogement>
-     */
-    public function getEvent(): Collection
-    {
-        return $this->event;
-    }
-
-    public function addEvent(EventToLogement $event): self
-    {
-        if (!$this->event->contains($event)) {
-            $this->event->add($event);
-            $event->setLogement($this);
-        }
-
-        return $this;
-    }
-
-    public function removeEvent(EventToLogement $event): self
-    {
-        if ($this->events->removeElement($event)) {
-            // set the owning side to null (unless already changed)
-            if ($event->getLogement() === $this) {
-                $event->setLogement(null);
-            }
-        }
-
-        return $this;
-    }
-
-    /**
-     * @return Collection<int, StyleToLogement>
-     */
-    public function getStyle(): Collection
-    {
-        return $this->style;
-    }
-
-    public function addStyle(StyleToLogement $style): self
-    {
-        if (!$this->style->contains($style)) {
-            $this->style->add($style);
-            $style->setLogement($this);
-        }
-
-        return $this;
-    }
-
-    public function removeStyle(StyleToLogement $style): self
-    {
-        if ($this->style->removeElement($style)) {
-            // set the owning side to null (unless already changed)
-            if ($style->getLogement() === $this) {
-                $style->setLogement(null);
-            }
-        }
-
-        return $this;
-    }
 
     /**
      * @return Collection<int, Reservation>
@@ -357,6 +306,54 @@ class Logement
     public function setChambre(int $chambre): self
     {
         $this->chambre = $chambre;
+
+        return $this;
+    }
+
+    public function getDateStart(): ?\DateTimeInterface
+    {
+        return $this->dateStart;
+    }
+
+    public function setDateStart(\DateTimeInterface $dateStart): self
+    {
+        $this->dateStart = $dateStart;
+
+        return $this;
+    }
+
+    public function getDateEnd(): ?\DateTimeInterface
+    {
+        return $this->dateEnd;
+    }
+
+    public function setDateEnd(\DateTimeInterface $dateEnd): self
+    {
+        $this->dateEnd = $dateEnd;
+
+        return $this;
+    }
+
+    public function getEvent(): ?Event
+    {
+        return $this->event;
+    }
+
+    public function setEvent(?Event $event): self
+    {
+        $this->event = $event;
+
+        return $this;
+    }
+
+    public function getStyle(): ?Style
+    {
+        return $this->style;
+    }
+
+    public function setStyle(?Style $style): self
+    {
+        $this->style = $style;
 
         return $this;
     }

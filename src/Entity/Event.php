@@ -6,6 +6,7 @@ use App\Repository\EventRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: EventRepository::class)]
 class Event
@@ -13,17 +14,20 @@ class Event
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(["getLogement"])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(["getLogement"])]
     private ?string $name = null;
 
-    #[ORM\OneToMany(mappedBy: 'event', targetEntity: EventToLogement::class)]
-    private Collection $logement;
+    #[ORM\OneToMany(mappedBy: 'event', targetEntity: Logement::class)]
+    private Collection $logements;
 
     public function __construct()
     {
         $this->logement = new ArrayCollection();
+        $this->logements = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -44,26 +48,26 @@ class Event
     }
 
     /**
-     * @return Collection<int, EventToLogement>
+     * @return Collection<int, Logement>
      */
-    public function getLogement(): Collection
+    public function getLogements(): Collection
     {
-        return $this->logement;
+        return $this->logements;
     }
 
-    public function addLogement(EventToLogement $logement): self
+    public function addLogement(Logement $logement): self
     {
-        if (!$this->logement->contains($logement)) {
-            $this->logement->add($logement);
+        if (!$this->logements->contains($logement)) {
+            $this->logements->add($logement);
             $logement->setEvent($this);
         }
 
         return $this;
     }
 
-    public function removeLogement(EventToLogement $logement): self
+    public function removeLogement(Logement $logement): self
     {
-        if ($this->logement->removeElement($logement)) {
+        if ($this->logements->removeElement($logement)) {
             // set the owning side to null (unless already changed)
             if ($logement->getEvent() === $this) {
                 $logement->setEvent(null);
