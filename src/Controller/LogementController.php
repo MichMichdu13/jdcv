@@ -115,28 +115,28 @@ class LogementController extends AbstractController
         $em->persist($logement);
         $em->flush();
 
-
-
         $imgs = $content['Imgs'] ?? [];
-        foreach ($imgs as $img) {
-
-            // Decode the image from base64 and save it to a temporary file
-            $imageData = base64_decode($img['imgBase64']);
+        $firstImage = true;
+        foreach ($imgs as $imgBase64) {
+            $imgBase64 = preg_replace('/data:image\/png;base64,/', '', $imgBase64);
+            $imageData = base64_decode($imgBase64);
             $tmpPath = tempnam(sys_get_temp_dir(), 'base64decoded');
             file_put_contents($tmpPath, $imageData);
-
-            // Create a unique name for the file and move it to the public/images directory
-            $fileName = uniqid() . '.png';  // Replace 'png' with the correct extension
+    
+            $fileName = uniqid() . '.png';
             $filePath = $this->getParameter('images_directory') . '/' . $fileName;
             rename($tmpPath, $filePath);
 
             $image = new ImgLogement();
             $image->setFilename($fileName);
-            $image->setImgMain($img['imgMain']);
             $image->setLogement($logement);
+
+            $image->setImgMain($firstImage); // Définition de la valeur imgMain
 
             $em->persist($image);
             $em->flush();
+    
+            $firstImage = false;
         }
 
         $jsonLogement = $serializer->serialize($logement, 'json',['groups' => 'getLogement']);
