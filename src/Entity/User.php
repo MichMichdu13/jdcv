@@ -14,11 +14,11 @@ class User
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(["getLogement"])]
+    #[Groups(["getLogement", "getProfile", "getResa"])]
     private ?int $id = null;
 
     #[ORM\OneToOne(inversedBy: 'user', cascade: ['persist', 'remove'])]
-    #[Groups(["getLogement"])]
+    #[Groups(["getLogement", "getResa"])]
     private ?Profil $Profile = null;
 
     #[ORM\OneToMany(mappedBy: 'User', targetEntity: Logement::class)]

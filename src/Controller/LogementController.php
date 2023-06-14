@@ -7,8 +7,10 @@ use App\Entity\Logement;
 use App\Entity\Profil;
 use App\Entity\TagsToLogement;
 use App\Entity\User;
+use App\Repository\EventRepository;
 use App\Repository\LogementRepository;
 use App\Repository\ProfilRepository;
+use App\Repository\StyleRepository;
 use App\Repository\TagsRepository;
 use App\Repository\TagsToLogementRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -27,7 +29,7 @@ use Symfony\Component\HttpFoundation\Response;
 class LogementController extends AbstractController
 {
 
-    #[Route('api/logement/search', name: 'getlogements', methods: ['POST'])]
+    #[Route('api/public/logement/search', name: 'getlogements', methods: ['POST'])]
     public function searchLogment(Request $request, LogementRepository $logementRepository, SerializerInterface $serializer)
     {
         $data = json_decode($request->getContent(), true);
@@ -35,6 +37,9 @@ class LogementController extends AbstractController
         $styleCriteria = $data['style'] ?? null;
         $eventCriteria = $data['event'] ?? null;
         $tagCriteria = $data['tag'] ?? null;
+        $department = $data['departement'] ?? null; // new line
+        $nbPersonne = $data['nbPersonne'] ?? null;
+        $page = $data['page'] ?? 1;
         $startDate = isset($data['startDate']) ? new \DateTime($data['startDate']) : null;
         $endDate = isset($data['endDate']) ? new \DateTime($data['endDate']) : null;
 
@@ -44,7 +49,8 @@ class LogementController extends AbstractController
             $endDate = $startDate; // Utilisez la même date pour endDate
         }
 
-        $logements = $logementRepository->findByCriteria($styleCriteria, $eventCriteria, $tagCriteria, $startDate, $endDate);
+        // add department to the method call
+        $logements = $logementRepository->findByCriteria($styleCriteria, $eventCriteria, $tagCriteria, $startDate, $endDate, $department, $nbPersonne, $page);
 
         if($logements){
             $jsonLogement = $serializer->serialize($logements, 'json',['groups' => 'getLogement']);
@@ -53,7 +59,8 @@ class LogementController extends AbstractController
         return new JsonResponse(null, Response::HTTP_NOT_FOUND);
     }
 
-    #[Route('api/logement/{id}', name: 'getlogement', methods: ['GET'])]
+
+    #[Route('api/public/logement/{id}', name: 'getlogement', methods: ['GET'])]
     public function findLogement(int $id, SerializerInterface $serializer,LogementRepository $logementRepository  ): JsonResponse
     {
         $logement = $logementRepository->find($id);
@@ -66,7 +73,7 @@ class LogementController extends AbstractController
 
 
     #[Route('/api/logement', name:"createlogement", methods: ['POST'])]
-    public function createLogement(Request $request,TagsRepository $tagsRepository, SerializerInterface $serializer, EntityManagerInterface $em, UrlGeneratorInterface $urlGenerator, Security $security, ProfilRepository $profilRepository): JsonResponse
+    public function createLogement(Request $request,EventRepository $eventRepository,TagsRepository $tagsRepository, StyleRepository $styleRepository,SerializerInterface $serializer, EntityManagerInterface $em, UrlGeneratorInterface $urlGenerator, Security $security, ProfilRepository $profilRepository): JsonResponse
     {
         $user = $security->getUser()->getUserIdentifier();
         $profile = $profilRepository->findOneBy(array('email' => $user));
@@ -89,8 +96,26 @@ class LogementController extends AbstractController
             $em->persist($tagToLogement);
             $em->flush();
         }
+
+        $event = $content['event'] ?? null;
+        if($event !== null){
+            $eventLogement =  $eventRepository->findOneBy(['name' => $event]);
+            $logement->setEvent($eventLogement);
+        }else{
+            return new JsonResponse(['message' => 'Bad event data'], Response::HTTP_BAD_REQUEST);
+        }
+        $style = $content['style'] ?? null;
+        if($event !== null){
+            $styleLogement =  $styleRepository->findOneBy(["name" => $style]);
+            $logement->setStyle($styleLogement);
+        }else{
+            return new JsonResponse(['message' => 'Bad style data'], Response::HTTP_BAD_REQUEST);
+        }
+
         $em->persist($logement);
         $em->flush();
+
+
 
         $imgs = $content['Imgs'] ?? [];
         foreach ($imgs as $img) {
@@ -105,15 +130,11 @@ class LogementController extends AbstractController
             $filePath = $this->getParameter('images_directory') . '/' . $fileName;
             rename($tmpPath, $filePath);
 
-            // Create a new Image entity and set its properties
             $image = new ImgLogement();
             $image->setFilename($fileName);
             $image->setImgMain($img['imgMain']);
             $image->setLogement($logement);
-            // You might need to fetch the related housing and set it like this:
-            // $image->setHousing($housing);
 
-            // Persist and flush the new Image entity
             $em->persist($image);
             $em->flush();
         }
@@ -125,25 +146,19 @@ class LogementController extends AbstractController
         return new JsonResponse($jsonLogement, Response::HTTP_CREATED, ["Location" => $location], true);
     }
 
-    #[Route('/api/logement/{id}', name: 'deletelogement', methods: ['DELETE'])]
-    public function deleteLogement(Logement $logement, EntityManagerInterface $em): JsonResponse
+    #[Route('/api/public/event/{name}/logements/count', name: 'count_logements_by_event', methods: ['GET'])]
+    public function countLogementsByEvent(string $name, LogementRepository $logementRepository): JsonResponse
     {
-        $em->remove($logement);
-        $em->flush();
+        $count = $logementRepository->countByEventName($name);
 
-        return new JsonResponse(null, Response::HTTP_NO_CONTENT);
+        return new JsonResponse(['count' => $count]);
+    }
+    #[Route('/api/style/{name}/logements/count', name: 'count_logements_by_style', methods: ['GET'])]
+    public function countLogementsByStyle(string $name, LogementRepository $logementRepository): JsonResponse
+    {
+        $count = $logementRepository->countByStyleName($name);
+
+        return new JsonResponse(['count' => $count]);
     }
 
-    #[Route('/api/books/{id}', name:"updateBook", methods:['PUT'])]
-
-    public function updateLogement(Request $request, SerializerInterface $serializer, Profil $profil, EntityManagerInterface $em, AuthorRepository $authorRepository): JsonResponse
-    {
-        $updatedlogement = $serializer->deserialize($request->getContent(),
-            Profil::class,
-            'json',
-            [AbstractNormalizer::OBJECT_TO_POPULATE => $profil]);
-        $em->persist($updatedlogement);
-        $em->flush();
-        return new JsonResponse(null, JsonResponse::HTTP_NO_CONTENT);
-    }
 }

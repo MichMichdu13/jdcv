@@ -39,20 +39,18 @@ class LogementRepository extends ServiceEntityRepository
             $this->getEntityManager()->flush();
         }
     }
-    public function findByCriteria($styleCriteria = null, $eventCriteria = null, array $tagCriteria = null, \DateTime $startDate = null, \DateTime $endDate = null, string $department= null, $page = 1, $limit = 20)
+    public function findByCriteria($styleCriteria = null, $eventCriteria = null, array $tagCriteria = null, \DateTime $startDate = null, \DateTime $endDate = null, string $department= null,int $nbPersonne=null, $page = 1, $limit = 10)
     {
         $qb = $this->createQueryBuilder('l');
 
         if ($styleCriteria !== null) {
-            $qb->leftJoin('l.style', 'stl')
-                ->leftJoin('stl.style', 's')
+            $qb->leftJoin('l.style', 's')
                 ->andWhere('s.name = :styleCriteria')
                 ->setParameter('styleCriteria', $styleCriteria);
         }
 
         if ($eventCriteria !== null) {
-            $qb->leftJoin('l.event', 'etl')
-                ->leftJoin('etl.event', 'e')
+            $qb->leftJoin('l.event', 'e')
                 ->andWhere('e.name = :eventCriteria')
                 ->setParameter('eventCriteria', $eventCriteria);
         }
@@ -63,9 +61,9 @@ class LogementRepository extends ServiceEntityRepository
                 ->andWhere('t.tag IN (:tagCriteria)')
                 ->setParameter('tagCriteria', $tagCriteria);
         }
+
         if ($startDate !== null && $endDate !== null) {
-            $qb->leftJoin('l.reservations', 'r')
-                ->andWhere('r.date >= :startDate AND r.date <= :endDate OR r.user IS NULL')
+            $qb->andWhere('l.dateStart >= :startDate AND l.dateEnd <= :endDate')
                 ->setParameter('startDate', $startDate)
                 ->setParameter('endDate', $endDate);
         }
@@ -74,37 +72,48 @@ class LogementRepository extends ServiceEntityRepository
             $qb->andWhere('SUBSTRING(l.cp, 1, 2) = :department')
                 ->setParameter('department', $department);
         }
-        $qb->setFirstResult(($page-1) * $limit)
-            ->setMaxResults($limit);
 
-        $paginator = new Paginator($qb);
+        if ($nbPersonne !== null) {
+            $qb->andWhere('l.nbPersonne <= :nbPersonne + 2 AND l.nbPersonne >= :nbPersonne - 2')
+                ->setParameter('nbPersonne', $nbPersonne);
+        }
 
-        return $paginator;
+        $paginator = new Paginator($qb->getQuery(), $fetchJoinCollection = true);
+        $paginator->getQuery()
+            ->setFirstResult($limit * ($page - 1)) // set the offset
+            ->setMaxResults($limit); // set the limit
+
+        $totalItems = count($paginator);
+        $totalPages = ceil($totalItems / $limit);
+
+        return [
+            'logements' => $paginator->getIterator()->getArrayCopy(),
+            'totalItems' => $totalItems,
+            'totalPages' => $totalPages,
+        ];
+    }
+
+    public function countByEventName(string $name): int
+    {
+        $qb = $this->createQueryBuilder('l')
+            ->select('count(l.id)')
+            ->leftJoin('l.event', 'e')
+            ->where('e.name = :name')
+            ->setParameter('name', $name);
+
+        return (int) $qb->getQuery()->getSingleScalarResult();
+    }
+
+    public function countByStyleName(string $name): int
+    {
+        $qb = $this->createQueryBuilder('l')
+            ->select('count(l.id)')
+            ->leftJoin('l.style', 's')
+            ->where('s.name = :name')
+            ->setParameter('name', $name);
+
+        return (int) $qb->getQuery()->getSingleScalarResult();
     }
 
 
-//    /**
-//     * @return Logement[] Returns an array of Logement objects
-//     */
-//    public function findByExampleField($value): array
-//    {
-//        return $this->createQueryBuilder('l')
-//            ->andWhere('l.exampleField = :val')
-//            ->setParameter('val', $value)
-//            ->orderBy('l.id', 'ASC')
-//            ->setMaxResults(10)
-//            ->getQuery()
-//            ->getResult()
-//        ;
-//    }
-
-//    public function findOneBySomeField($value): ?Logement
-//    {
-//        return $this->createQueryBuilder('l')
-//            ->andWhere('l.exampleField = :val')
-//            ->setParameter('val', $value)
-//            ->getQuery()
-//            ->getOneOrNullResult()
-//        ;
-//    }
 }

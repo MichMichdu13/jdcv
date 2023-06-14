@@ -7,6 +7,13 @@ parameters:
     images_directory: '%kernel.project_dir%/public/images'
 
 services:
+    App\Security\AuthenticationSuccessHandler:
+        arguments:
+            - '@lexik_jwt_authentication.jwt_manager'
+            - '@event_dispatcher'
+            - '@serializer'
+            - '@some_cookie_provider'
+            - true
     App\Controller\LogementController:
         arguments:
             $images_directory: '%images_directory%'

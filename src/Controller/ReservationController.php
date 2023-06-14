@@ -20,6 +20,7 @@ class ReservationController extends AbstractController
     public function new(int $id, SerializerInterface $serializer, Security $security, LogementRepository $logementRepository, Request $request, ReservationRepository $reservationRepository, ProfilRepository $profilRepository): JsonResponse
     {
         $logement = $logementRepository->find($id);
+
         if(!$logement){
             return new JsonResponse(['message' => 'Logement not found'], Response::HTTP_NOT_FOUND);
         }
@@ -27,10 +28,15 @@ class ReservationController extends AbstractController
         if(!$reservation){
             return new JsonResponse(['message' => 'Bad reservation data'], Response::HTTP_BAD_REQUEST);
         }
-        $reservation->setLogement($logement);
-        dd($reservation);
-        $reservationRepository->save($reservation);
-        $jsonLogement = $serializer->serialize($logement, 'json',['groups' => 'getLogement']);
+        try {
+            $reservation->setLogement($logement);
+            $reservation->setUser($security->getUser()->getUser());
+            $reservationRepository->save($reservation);
+        } catch (\Exception $e) {
+            return new JsonResponse(['message' => 'Error: ' . $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+
+        $jsonLogement = $serializer->serialize($reservation, 'json',['groups' => 'getResa']);
 
         return new JsonResponse($jsonLogement, Response::HTTP_OK, [], true);
     }
