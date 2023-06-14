@@ -115,7 +115,6 @@ class LogementController extends AbstractController
         $em->persist($logement);
         $em->flush();
 
-
         $imgs = $content['Imgs'] ?? [];
         $firstImage = true;
         foreach ($imgs as $imgBase64) {
@@ -127,12 +126,13 @@ class LogementController extends AbstractController
             $fileName = uniqid() . '.png';
             $filePath = $this->getParameter('images_directory') . '/' . $fileName;
             rename($tmpPath, $filePath);
-    
+
             $image = new ImgLogement();
             $image->setFilename($fileName);
             $image->setLogement($logement);
+
             $image->setImgMain($firstImage); // Définition de la valeur imgMain
-    
+
             $em->persist($image);
             $em->flush();
     
