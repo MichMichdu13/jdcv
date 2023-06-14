@@ -87,8 +87,18 @@ class ProfileController extends AbstractController
         if (isset($requestData['password'])) {
             $requestData['password'] = $userPasswordHasher->hashPassword($existingProfile, $requestData['password']);
         }
-
         $updatedProfile = $serializer->denormalize($requestData, Profil::class, 'array', [ObjectNormalizer::OBJECT_TO_POPULATE => $existingProfile]);
+        if (isset($requestData['avatar'])) {
+            $imgBase64 = preg_replace('/data:image\/png;base64,/', '', $requestData['avatar']);
+            $imageData = base64_decode($imgBase64);
+            $tmpPath = tempnam(sys_get_temp_dir(), 'base64decoded');
+            file_put_contents($tmpPath, $imageData);
+
+            $fileName = uniqid() . '.png';
+            $filePath = $this->getParameter('images_directory') . '/' . $fileName;
+            rename($tmpPath, $filePath);
+        }
+        $updatedProfile->setAvatar($fileName);
 
         try {
             $em->persist($updatedProfile);
